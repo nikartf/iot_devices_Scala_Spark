@@ -1,0 +1,72 @@
+case class DeviceIoTData (
+  battery_level: Long,
+  c02_level: Long,
+  cca2: String,
+  cca3: String,
+  cn: String,
+  device_id: Long,
+  device_name: String,
+  humidity: Long,
+  ip: String,
+  latitude: Double,
+  longitude: Double,
+  scale: String,
+  temp: Long,
+  timestamp: Long
+)
+
+//read our data
+val ds = sqlContext.read.json("/FileStore/tables/iot_devices.json").as[DeviceIoTData]
+
+//show data
+display(ds)
+
+//check if all data is read
+ds.count()
+
+// How many sensor pads are reported to be from Poland
+// count all sensor-pads from Poland
+val poland = ds.select($"cn", $"device_name").where($"cn".contains("Poland") && $"device_name".contains("sensor-pad"))
+poland.count()
+
+//check if all data is correct
+display(poland)
+
+//How many different lcds are present in the dataset
+val lcdCounts = ds.groupBy("lcd").count()
+display(lcdCounts)
+
+//Find 5 countries that have the largest number of MAC devices used
+//Select all countries which use MAC
+val country = ds.select($"cca3", $"device_name").where($"device_name".contains("-mac"))
+display(country)
+
+// Count the number of MAC for each country and sorting in descend order
+val country_max= country.groupBy($"cca3").count.orderBy($"count".desc).head(5)
+display (country_max)
+
+// Let see which country used devices much more
+val all_country = ds.select($"cn", $"cca3", $"device_name")
+display(all_country)
+
+//how can seen below, USA used much more devices
+val all_country_max = all_country.groupBy($"cca3").count.orderBy($"count".desc).head(50)
+display(all_country_max)
+
+// Let see how many MAC used USA
+val usa_mac = ds.select($"cca3", $"device_name").where($"cca3".contains("USA") && $"device_name".contains("-mac"))
+usa_mac.count()
+
+//Let see how many sensor-pads used USA
+val usa_pad = ds.select($"cca3", $"device_name").where($"cca3".contains("USA") && $"device_name".contains("-pad"))
+usa_pad.count()
+
+//Let see how many meter-gauges used USA
+val usa_gauge = ds.select($"cca3", $"device_name").where($"cca3".contains("USA") && $"device_name".contains("meter-gauge"))
+usa_gauge.count()
+
+//Let see how many therm-stic used USA
+val usa_stick = ds.select($"cca3", $"device_name").where($"cca3".contains("USA") && $"device_name".contains("therm-stick"))
+usa_stick.count()
+
+//Conclusion: sensor-pads is more popular devices in USA.
